@@ -2,81 +2,97 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>シフト表</title>
+<title>シフト管理</title>
 <style>
-body { font-family: Arial; margin:20px; }
+body { font-family:sans-serif; margin:20px; }
 
-.controls { margin-bottom:10px; }
+.top {
+  margin-bottom:10px;
+}
 
 .container {
   overflow-x:auto;
-  border:1px solid #ddd;
+  border:1px solid #ccc;
 }
 
 table {
   border-collapse: collapse;
-  min-width:1200px;
+  min-width: 1400px;
 }
 
 th, td {
-  border:1px solid #ccc;
+  border:1px solid #ddd;
   text-align:center;
+  padding:6px;
 }
 
 th {
   background:#f5f5f5;
   font-size:12px;
-  padding:5px;
 }
 
 .name {
-  background:#fafafa;
-  font-weight:bold;
-  width:120px;
   position: sticky;
   left:0;
+  background:#fff;
+  font-weight:bold;
+  width:120px;
   z-index:2;
 }
 
-.cell {
-  width:80px;
-  height:50px;
+.count {
+  background:#fafafa;
+  font-size:11px;
 }
 
-input {
-  width:100%;
-  height:100%;
-  border:none;
-  text-align:center;
-  font-size:13px;
+.cell {
+  width:60px;
+  height:40px;
+  cursor:pointer;
 }
 
 /* 色 */
-.work { background:#cce5ff; }
-.off { background:#eee; }
-.weekend { background:#ffecec; }
+.early { background:#81d4fa; }
+.late { background:#ffcc80; }
+.off { background:#eee; color:#aaa; }
+
+.weekend { background:#fdecea; }
 .today { outline:2px solid red; }
 
+.alert {
+  background:#ff5252 !important;
+  color:#fff;
+}
+
+.legend {
+  margin:10px 0;
+}
 </style>
 </head>
 <body>
 
-<h2>派遣シフト表</h2>
+<h2>派遣シフト管理</h2>
 
-<div class="controls">
+<div class="top">
   <input type="month" id="month">
   <button onclick="addStaff()">スタッフ追加</button>
+  <button onclick="downloadCSV()">CSV</button>
+</div>
+
+<div class="legend">
+  早=早番 / 遅=遅番 / 休=休み（クリックで切替）
 </div>
 
 <div class="container">
-  <table id="table"></table>
+<table id="table"></table>
 </div>
 
 <script>
-let staff = JSON.parse(localStorage.getItem("staff")) || 
-["宮本","杉山","高盛","橋本","古志根"];
-
+const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
+let staff = JSON.parse(localStorage.getItem("staff")) || defaultStaff;
 let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
+
+const MIN_REQUIRED = 2; // 必要人数
 
 function save(){
   localStorage.setItem("staff", JSON.stringify(staff));
@@ -84,11 +100,31 @@ function save(){
 }
 
 function addStaff(){
-  const name = prompt("スタッフ名を入力");
+  const name = prompt("スタッフ名");
   if(!name) return;
   staff.push(name);
   save();
   render();
+}
+
+function toggle(key, el){
+  const order = ["", "早", "遅", "休"];
+  let current = shifts[key] || "";
+  let next = order[(order.indexOf(current)+1) % order.length];
+
+  shifts[key] = next;
+  el.textContent = next;
+  el.className = "cell " + getClass(next);
+
+  save();
+  render(); // 人数更新のため
+}
+
+function getClass(val){
+  if(val==="早") return "early";
+  if(val==="遅") return "late";
+  if(val==="休") return "off";
+  return "";
 }
 
 function render(){
@@ -104,27 +140,45 @@ function render(){
   const week = ["日","月","火","水","木","金","土"];
   const today = new Date();
 
-  // ヘッダー
+  // 人数カウント
+  let countMap = {};
+
+  staff.forEach(name=>{
+    for(let d=1; d<=days; d++){
+      const date = `${month}-${String(d).padStart(2,'0')}`;
+      const key = name+"_"+date;
+      if(shifts[key] && shifts[key] !== "休"){
+        countMap[date] = (countMap[date] || 0) + 1;
+      }
+    }
+  });
+
+  // header
   let header = "<tr><th class='name'>名前</th>";
 
   for(let d=1; d<=days; d++){
+    const date = `${month}-${String(d).padStart(2,'0')}`;
     const dateObj = new Date(y, m-1, d);
     const w = week[dateObj.getDay()];
-    const isWeekend = (w==="土" || w==="日") ? "weekend" : "";
+    const isWeekend = (w==="土"||w==="日") ? "weekend" : "";
     const isToday =
       today.getFullYear()==y &&
       (today.getMonth()+1)==m &&
       today.getDate()==d ? "today" : "";
 
-    header += `<th class="${isWeekend} ${isToday}">
-      ${d}<br>${w}
+    const count = countMap[date] || 0;
+    const alert = count < MIN_REQUIRED ? "alert" : "";
+
+    header += `<th class="${isWeekend} ${isToday} ${alert}">
+      ${d}<br>${w}<br>
+      <span class="count">${count}人</span>
     </th>`;
   }
 
   header += "</tr>";
   table.innerHTML += header;
 
-  // 本体
+  // rows
   staff.forEach(name=>{
     let row = `<tr><td class="name">${name}</td>`;
 
@@ -133,12 +187,9 @@ function render(){
       const key = name+"_"+date;
       const val = shifts[key] || "";
 
-      row += `<td class="cell">
-        <input 
-          value="${val}"
-          placeholder="9-18 / 休"
-          class="${getClass(val)}"
-          oninput="update(this,'${key}')">
+      row += `<td class="cell ${getClass(val)}"
+        onclick="toggle('${key}', this)">
+        ${val}
       </td>`;
     }
 
@@ -147,26 +198,27 @@ function render(){
   });
 }
 
-function update(el,key){
-  const val = el.value;
-  shifts[key] = val;
-  el.className = getClass(val);
-  save();
+function downloadCSV(){
+  let csv = "名前,日付,シフト\n";
+  for(let key in shifts){
+    const [name,date] = key.split("_");
+    csv += `${name},${date},${shifts[key]}\n`;
+  }
+
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "shift.csv";
+  a.click();
 }
 
-function getClass(val){
-  if(val.includes("休")) return "off";
-  if(val) return "work";
-  return "";
-}
-
-/* 初期ロード */
-window.onload = () => {
-  const today = new Date();
-  const ym = today.toISOString().slice(0,7);
-  document.getElementById("month").value = ym;
+window.onload = ()=>{
+  const now = new Date().toISOString().slice(0,7);
+  document.getElementById("month").value = now;
   render();
 };
+
+document.getElementById("month").onchange = render;
 </script>
 
 </body>
