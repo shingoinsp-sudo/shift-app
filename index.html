@@ -2,161 +2,111 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>シフト管理アプリ</title>
+<title>シフト表</title>
 <style>
-body { font-family: Arial; margin: 20px; }
-h1 { margin-bottom: 10px; }
-input, select, button { margin: 5px; padding: 5px; }
-
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-top: 20px;
+body { font-family: Arial; margin:20px; }
+table { border-collapse: collapse; width:100%; }
+th, td {
+  border:1px solid #ccc;
+  text-align:center;
+  padding:5px;
+  font-size:12px;
 }
-.day {
-  border: 1px solid #ccc;
-  min-height: 100px;
-  padding: 5px;
-  font-size: 12px;
-}
-.date {
-  font-weight: bold;
+input {
+  width:100%;
+  border:none;
+  text-align:center;
 }
 
-.shift-work { background: #cce5ff; }
-.shift-off { background: #eee; }
-
-.shift-item {
-  margin-top: 3px;
-  padding: 2px;
-  border-radius: 3px;
-}
+.work { background:#cce5ff; }
+.off { background:#eee; }
 
 </style>
 </head>
 <body>
 
-<h1>派遣シフト管理</h1>
+<h2>派遣シフト表</h2>
 
-<h3>スタッフ追加</h3>
-<input type="text" id="staffName" placeholder="名前">
-<button onclick="addStaff()">追加</button>
+<input type="month" id="month" onchange="render()">
+<button onclick="addStaff()">スタッフ追加</button>
+<button onclick="downloadCSV()">CSV</button>
 
-<h3>シフト登録</h3>
-<select id="staffSelect"></select>
-<input type="date" id="date">
-<input type="text" id="shift" placeholder="例：9:00-18:00 / 休み">
-<button onclick="addShift()">登録</button>
-
-<h3>表示設定</h3>
-<select id="filterStaff" onchange="renderCalendar()">
-  <option value="">全員</option>
-</select>
-
-<input type="month" id="month" onchange="renderCalendar()">
-
-<button onclick="downloadCSV()">CSVダウンロード</button>
-
-<div class="calendar" id="calendar"></div>
+<table id="table"></table>
 
 <script>
-let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
-let shifts = JSON.parse(localStorage.getItem("shifts")) || [];
+let staff = JSON.parse(localStorage.getItem("staff")) || ["スタッフ1","スタッフ2"];
+let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
 
-function saveData() {
-  localStorage.setItem("staffList", JSON.stringify(staffList));
+function save() {
+  localStorage.setItem("staff", JSON.stringify(staff));
   localStorage.setItem("shifts", JSON.stringify(shifts));
 }
 
 function addStaff() {
-  const name = document.getElementById("staffName").value;
-  if (!name) return alert("名前を入力");
-  staffList.push(name);
-  document.getElementById("staffName").value = "";
-  saveData();
-  renderStaff();
+  const name = prompt("名前入力");
+  if (!name) return;
+  staff.push(name);
+  save();
+  render();
 }
 
-function renderStaff() {
-  const select = document.getElementById("staffSelect");
-  const filter = document.getElementById("filterStaff");
+function render() {
+  const table = document.getElementById("table");
+  table.innerHTML = "";
 
-  select.innerHTML = "";
-  filter.innerHTML = '<option value="">全員</option>';
+  const month = document.getElementById("month").value;
+  if (!month) return;
 
-  staffList.forEach(name => {
-    select.innerHTML += `<option value="${name}">${name}</option>`;
-    filter.innerHTML += `<option value="${name}">${name}</option>`;
+  const [y,m] = month.split("-");
+  const days = new Date(y, m, 0).getDate();
+
+  let header = "<tr><th>名前</th>";
+  for(let d=1; d<=days; d++) header += `<th>${d}</th>`;
+  header += "</tr>";
+  table.innerHTML += header;
+
+  staff.forEach(name=>{
+    let row = `<tr><td>${name}</td>`;
+    for(let d=1; d<=days; d++){
+      const date = `${month}-${String(d).padStart(2,'0')}`;
+      const key = name+"_"+date;
+      const val = shifts[key] || "";
+
+      row += `<td>
+        <input value="${val}" 
+          onchange="update('${key}', this.value)" 
+          class="${getClass(val)}">
+      </td>`;
+    }
+    row += "</tr>";
+    table.innerHTML += row;
   });
 }
 
-function addShift() {
-  const name = document.getElementById("staffSelect").value;
-  const date = document.getElementById("date").value;
-  const shift = document.getElementById("shift").value;
-
-  if (!date || !shift) return alert("入力不足");
-
-  shifts.push({ name, date, shift });
-  saveData();
-  renderCalendar();
+function update(key,val){
+  shifts[key] = val;
+  save();
+  render();
 }
 
-function renderCalendar() {
-  const cal = document.getElementById("calendar");
-  cal.innerHTML = "";
+function getClass(val){
+  if(val.includes("休")) return "off";
+  if(val) return "work";
+  return "";
+}
 
-  const selectedMonth = document.getElementById("month").value;
-  if (!selectedMonth) return;
-
-  const [year, month] = selectedMonth.split("-");
-  const days = new Date(year, month, 0).getDate();
-  const filter = document.getElementById("filterStaff").value;
-
-  for (let d = 1; d <= days; d++) {
-    const dateStr = `${year}-${month.padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayDiv = document.createElement("div");
-    dayDiv.className = "day";
-
-    dayDiv.innerHTML = `<div class="date">${d}</div>`;
-
-    shifts.forEach(s => {
-      if (s.date === dateStr && (!filter || s.name === filter)) {
-        const item = document.createElement("div");
-        item.className = "shift-item";
-
-        if (s.shift.includes("休")) {
-          item.classList.add("shift-off");
-        } else {
-          item.classList.add("shift-work");
-        }
-
-        item.textContent = `${s.name}: ${s.shift}`;
-        dayDiv.appendChild(item);
-      }
-    });
-
-    cal.appendChild(dayDiv);
+function downloadCSV(){
+  let csv="名前,日付,シフト\n";
+  for(let key in shifts){
+    const [name,date] = key.split("_");
+    csv += `${name},${date},${shifts[key]}\n`;
   }
-}
-
-function downloadCSV() {
-  let csv = "名前,日付,シフト\n";
-  shifts.forEach(s => {
-    csv += `${s.name},${s.date},${s.shift}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
+  const blob = new Blob([csv], {type:"text/csv"});
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "shift.csv";
+  a.href = URL.createObjectURL(blob);
+  a.download="shift.csv";
   a.click();
 }
-
-renderStaff();
 </script>
 
 </body>
