@@ -2,21 +2,32 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Shift Dashboard</title>
+<title>Shift Manager</title>
 
 <style>
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --sub: #6b7280;
+  --accent: #2563eb;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f7f7f8;
   margin: 0;
-  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
 }
 
 /* header */
 .header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .title {
@@ -26,116 +37,134 @@ body {
 
 .controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 input, button {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   background: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-/* grid */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+button:hover {
+  background: #f1f5f9;
 }
 
 /* card */
 .card {
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+/* table */
+.wrapper {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 1200px;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+th {
+  font-size: 11px;
+  padding: 6px;
+  background: #f9fafb;
+  color: var(--sub);
 }
 
 .name {
+  position: sticky;
+  left: 0;
+  background: #fff;
   font-weight: 600;
-  margin-bottom: 10px;
+  width: 130px;
+  text-align: left;
+  padding-left: 12px;
 }
 
-/* calendar */
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-.day {
-  font-size: 11px;
-  text-align: center;
-  color: #aaa;
-}
-
+/* cell */
 .cell {
-  width: 100%;
-  aspect-ratio: 1/1;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 46px;
+  height: 46px;
   cursor: pointer;
   position: relative;
-  transition: 0.2s;
+  transition: 0.15s;
 }
 
 .cell:hover {
-  background: #f0f0f0;
+  background: #f1f5f9;
 }
 
-.circle {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-}
-
-.present { background: #111; }
-.absent { border: 2px solid #ccc; }
-
-.note {
-  position: absolute;
-  bottom: 2px;
-  right: 4px;
-  font-size: 10px;
-  color: #999;
-}
-
-/* tooltip */
-.tooltip {
-  position: absolute;
-  bottom: 110%;
-  background: #111;
+/* states */
+.present {
+  background: var(--accent);
   color: #fff;
-  padding: 4px 6px;
-  font-size: 11px;
-  border-radius: 4px;
-  white-space: nowrap;
-  display: none;
+  font-weight: 600;
 }
 
-.cell:hover .tooltip {
-  display: block;
+.absent {
+  color: #cbd5e1;
 }
 
+.today {
+  outline: 2px solid var(--accent);
+}
+
+.weekend {
+  background: #fafafa;
+}
+
+/* date */
+.date {
+  font-size: 10px;
+  color: var(--sub);
+}
+
+/* note panel */
+.note-panel {
+  border-top: 1px solid var(--border);
+  padding: 10px;
+  font-size: 13px;
+  color: var(--sub);
+  background: #fcfcfd;
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div class="title">Shift Dashboard</div>
+  <div class="title">Shift Manager</div>
   <div class="controls">
     <input type="month" id="month">
     <button onclick="addStaff()">＋</button>
   </div>
 </div>
 
-<div class="grid" id="grid"></div>
+<div class="card">
+  <div class="wrapper">
+    <table id="table"></table>
+  </div>
+  <div class="note-panel" id="notePanel">
+    備考：セルにカーソルを合わせて確認
+  </div>
+</div>
 
 <script>
 const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
+
 let staff = JSON.parse(localStorage.getItem("staff")) || defaultStaff;
 let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
 let notes = JSON.parse(localStorage.getItem("notes")) || {};
@@ -163,8 +192,13 @@ function toggle(key){
   render();
 }
 
+function showNote(key){
+  const text = notes[key] || "（備考なし）";
+  document.getElementById("notePanel").innerText = "備考：" + text;
+}
+
 function editNote(key){
-  const val = prompt("備考", notes[key] || "");
+  const val = prompt("備考入力", notes[key] || "");
   if(val !== null){
     notes[key] = val;
     save();
@@ -173,46 +207,57 @@ function editNote(key){
 }
 
 function render(){
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
+  const table = document.getElementById("table");
+  table.innerHTML = "";
 
   const month = document.getElementById("month").value;
   if(!month) return;
 
   const [y,m] = month.split("-");
   const days = new Date(y, m, 0).getDate();
+  const week = ["日","月","火","水","木","金","土"];
+  const today = new Date();
+
+  let header = "<tr><th class='name'>名前</th>";
+
+  for(let d=1; d<=days; d++){
+    const dateObj = new Date(y, m-1, d);
+    const w = week[dateObj.getDay()];
+    const isToday =
+      today.getFullYear()==y &&
+      today.getMonth()+1==m &&
+      today.getDate()==d ? "today" : "";
+
+    const isWeekend = (w==="土"||w==="日") ? "weekend" : "";
+
+    header += `<th class="${isToday} ${isWeekend}">
+      <div>${d}</div>
+      <div class="date">${w}</div>
+    </th>`;
+  }
+
+  header += "</tr>";
+  table.innerHTML += header;
 
   staff.forEach(name=>{
-    const card = document.createElement("div");
-    card.className = "card";
-
-    let html = `<div class="name">${name}</div>`;
-    html += `<div class="calendar">`;
+    let row = `<tr><td class="name">${name}</td>`;
 
     for(let d=1; d<=days; d++){
       const date = `${month}-${String(d).padStart(2,'0')}`;
       const key = name+"_"+date;
-      const val = shifts[key];
-      const note = notes[key];
+      const val = shifts[key] || "";
 
-      html += `
-      <div class="cell" 
+      row += `
+      <td class="cell ${val==='●'?'present':''}" 
         onclick="toggle('${key}')"
+        onmouseover="showNote('${key}')"
         ondblclick="editNote('${key}')">
-
-        ${val==="●" ? `<div class="circle present"></div>` : ""}
-        ${val==="×" ? `<div class="circle absent"></div>` : ""}
-        
-        ${note ? `<div class="note">※</div>
-        <div class="tooltip">${note}</div>` : ""}
-
-      </div>`;
+        ${val}
+      </td>`;
     }
 
-    html += `</div>`;
-    card.innerHTML = html;
-
-    grid.appendChild(card);
+    row += "</tr>";
+    table.innerHTML += row;
   });
 }
 
