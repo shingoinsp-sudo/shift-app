@@ -4,62 +4,59 @@
 <meta charset="UTF-8">
 <title>シフト表</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-}
+body { font-family: Arial; margin:20px; }
 
-h2 {
-  margin-bottom: 10px;
-}
+.controls { margin-bottom:10px; }
 
-.controls {
-  margin-bottom: 10px;
+.container {
+  overflow-x:auto;
+  border:1px solid #ddd;
 }
 
 table {
   border-collapse: collapse;
-  min-width: 1000px;
+  min-width:1200px;
 }
 
 th, td {
-  border: 1px solid #ccc;
-  text-align: center;
+  border:1px solid #ccc;
+  text-align:center;
 }
 
 th {
-  background: #f5f5f5;
-  font-size: 12px;
+  background:#f5f5f5;
+  font-size:12px;
+  padding:5px;
 }
 
 .name {
-  background: #fafafa;
-  font-weight: bold;
-  width: 120px;
+  background:#fafafa;
+  font-weight:bold;
+  width:120px;
+  position: sticky;
+  left:0;
+  z-index:2;
 }
 
 .cell {
-  width: 80px;
-  height: 50px;
+  width:80px;
+  height:50px;
 }
 
 input {
-  width: 100%;
-  height: 100%;
-  border: none;
-  text-align: center;
-  font-size: 13px;
+  width:100%;
+  height:100%;
+  border:none;
+  text-align:center;
+  font-size:13px;
 }
 
-/* 色分け */
-.work { background: #cce5ff; }
-.off { background: #eee; }
-.weekend { background: #ffecec; }
+/* 色 */
+.work { background:#cce5ff; }
+.off { background:#eee; }
+.weekend { background:#ffecec; }
+.today { outline:2px solid red; }
 
-.container {
-  overflow-x: auto;
-  border: 1px solid #ddd;
-}
 </style>
 </head>
 <body>
@@ -67,7 +64,7 @@ input {
 <h2>派遣シフト表</h2>
 
 <div class="controls">
-  <input type="month" id="month" onchange="render()">
+  <input type="month" id="month">
   <button onclick="addStaff()">スタッフ追加</button>
 </div>
 
@@ -87,7 +84,7 @@ function save(){
 }
 
 function addStaff(){
-  const name = prompt("スタッフ名");
+  const name = prompt("スタッフ名を入力");
   if(!name) return;
   staff.push(name);
   save();
@@ -105,34 +102,43 @@ function render(){
   const days = new Date(y, m, 0).getDate();
 
   const week = ["日","月","火","水","木","金","土"];
+  const today = new Date();
 
   // ヘッダー
   let header = "<tr><th class='name'>名前</th>";
-  for(let d=1; d<=days; d++){
-    const date = new Date(y, m-1, d);
-    const w = week[date.getDay()];
-    const isWeekend = (w==="土" || w==="日") ? "weekend" : "";
 
-    header += `<th class="${isWeekend}">
+  for(let d=1; d<=days; d++){
+    const dateObj = new Date(y, m-1, d);
+    const w = week[dateObj.getDay()];
+    const isWeekend = (w==="土" || w==="日") ? "weekend" : "";
+    const isToday =
+      today.getFullYear()==y &&
+      (today.getMonth()+1)==m &&
+      today.getDate()==d ? "today" : "";
+
+    header += `<th class="${isWeekend} ${isToday}">
       ${d}<br>${w}
     </th>`;
   }
+
   header += "</tr>";
   table.innerHTML += header;
 
   // 本体
   staff.forEach(name=>{
     let row = `<tr><td class="name">${name}</td>`;
-    
+
     for(let d=1; d<=days; d++){
       const date = `${month}-${String(d).padStart(2,'0')}`;
       const key = name+"_"+date;
       const val = shifts[key] || "";
 
       row += `<td class="cell">
-        <input value="${val}" 
+        <input 
+          value="${val}"
+          placeholder="9-18 / 休"
           class="${getClass(val)}"
-          onchange="update('${key}', this.value)">
+          oninput="update(this,'${key}')">
       </td>`;
     }
 
@@ -141,10 +147,11 @@ function render(){
   });
 }
 
-function update(key,val){
+function update(el,key){
+  const val = el.value;
   shifts[key] = val;
+  el.className = getClass(val);
   save();
-  render();
 }
 
 function getClass(val){
@@ -152,6 +159,14 @@ function getClass(val){
   if(val) return "work";
   return "";
 }
+
+/* 初期ロード */
+window.onload = () => {
+  const today = new Date();
+  const ym = today.toISOString().slice(0,7);
+  document.getElementById("month").value = ym;
+  render();
+};
 </script>
 
 </body>
