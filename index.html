@@ -4,33 +4,35 @@
 <meta charset="UTF-8">
 <title>シフト管理アプリ</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-}
-h1 {
-  margin-bottom: 10px;
-}
-input, select, button {
-  margin: 5px;
-  padding: 5px;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
+body { font-family: Arial; margin: 20px; }
+h1 { margin-bottom: 10px; }
+input, select, button { margin: 5px; padding: 5px; }
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
   margin-top: 20px;
 }
-th, td {
+.day {
   border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
+  min-height: 100px;
+  padding: 5px;
+  font-size: 12px;
 }
-button {
-  cursor: pointer;
+.date {
+  font-weight: bold;
 }
-.delete {
-  color: red;
+
+.shift-work { background: #cce5ff; }
+.shift-off { background: #eee; }
+
+.shift-item {
+  margin-top: 3px;
+  padding: 2px;
+  border-radius: 3px;
 }
+
 </style>
 </head>
 <body>
@@ -44,21 +46,19 @@ button {
 <h3>シフト登録</h3>
 <select id="staffSelect"></select>
 <input type="date" id="date">
-<input type="text" id="shift" placeholder="例：9:00-18:00">
+<input type="text" id="shift" placeholder="例：9:00-18:00 / 休み">
 <button onclick="addShift()">登録</button>
 
-<h3>シフト一覧</h3>
-<table>
-  <thead>
-    <tr>
-      <th>名前</th>
-      <th>日付</th>
-      <th>シフト</th>
-      <th>削除</th>
-    </tr>
-  </thead>
-  <tbody id="shiftTable"></tbody>
-</table>
+<h3>表示設定</h3>
+<select id="filterStaff" onchange="renderCalendar()">
+  <option value="">全員</option>
+</select>
+
+<input type="month" id="month" onchange="renderCalendar()">
+
+<button onclick="downloadCSV()">CSVダウンロード</button>
+
+<div class="calendar" id="calendar"></div>
 
 <script>
 let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
@@ -71,7 +71,7 @@ function saveData() {
 
 function addStaff() {
   const name = document.getElementById("staffName").value;
-  if (!name) return alert("名前を入力してください");
+  if (!name) return alert("名前を入力");
   staffList.push(name);
   document.getElementById("staffName").value = "";
   saveData();
@@ -80,12 +80,14 @@ function addStaff() {
 
 function renderStaff() {
   const select = document.getElementById("staffSelect");
+  const filter = document.getElementById("filterStaff");
+
   select.innerHTML = "";
+  filter.innerHTML = '<option value="">全員</option>';
+
   staffList.forEach(name => {
-    const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
-    select.appendChild(option);
+    select.innerHTML += `<option value="${name}">${name}</option>`;
+    filter.innerHTML += `<option value="${name}">${name}</option>`;
   });
 }
 
@@ -94,39 +96,67 @@ function addShift() {
   const date = document.getElementById("date").value;
   const shift = document.getElementById("shift").value;
 
-  if (!date || !shift) return alert("日付とシフトを入力してください");
+  if (!date || !shift) return alert("入力不足");
 
   shifts.push({ name, date, shift });
   saveData();
-  renderShifts();
+  renderCalendar();
 }
 
-function renderShifts() {
-  const table = document.getElementById("shiftTable");
-  table.innerHTML = "";
+function renderCalendar() {
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
 
-  shifts.forEach((s, index) => {
-    const row = document.createElement("tr");
+  const selectedMonth = document.getElementById("month").value;
+  if (!selectedMonth) return;
 
-    row.innerHTML = `
-      <td>${s.name}</td>
-      <td>${s.date}</td>
-      <td>${s.shift}</td>
-      <td><button class="delete" onclick="deleteShift(${index})">削除</button></td>
-    `;
+  const [year, month] = selectedMonth.split("-");
+  const days = new Date(year, month, 0).getDate();
+  const filter = document.getElementById("filterStaff").value;
 
-    table.appendChild(row);
+  for (let d = 1; d <= days; d++) {
+    const dateStr = `${year}-${month.padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayDiv = document.createElement("div");
+    dayDiv.className = "day";
+
+    dayDiv.innerHTML = `<div class="date">${d}</div>`;
+
+    shifts.forEach(s => {
+      if (s.date === dateStr && (!filter || s.name === filter)) {
+        const item = document.createElement("div");
+        item.className = "shift-item";
+
+        if (s.shift.includes("休")) {
+          item.classList.add("shift-off");
+        } else {
+          item.classList.add("shift-work");
+        }
+
+        item.textContent = `${s.name}: ${s.shift}`;
+        dayDiv.appendChild(item);
+      }
+    });
+
+    cal.appendChild(dayDiv);
+  }
+}
+
+function downloadCSV() {
+  let csv = "名前,日付,シフト\n";
+  shifts.forEach(s => {
+    csv += `${s.name},${s.date},${s.shift}\n`;
   });
-}
 
-function deleteShift(index) {
-  shifts.splice(index, 1);
-  saveData();
-  renderShifts();
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "shift.csv";
+  a.click();
 }
 
 renderStaff();
-renderShifts();
 </script>
 
 </body>
