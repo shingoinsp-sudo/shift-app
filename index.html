@@ -4,80 +4,138 @@
 <meta charset="UTF-8">
 <title>シフト表</title>
 <style>
-body { font-family: Arial; margin:20px; }
-table { border-collapse: collapse; width:100%; }
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+.controls {
+  margin-bottom: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
 th, td {
-  border:1px solid #ccc;
-  text-align:center;
-  padding:5px;
-  font-size:12px;
+  border: 1px solid #ccc;
+  text-align: center;
 }
+
+th {
+  background: #f5f5f5;
+  font-size: 12px;
+}
+
+.name {
+  background: #fafafa;
+  font-weight: bold;
+  width: 120px;
+}
+
+.cell {
+  width: 80px;
+  height: 50px;
+}
+
 input {
-  width:100%;
-  border:none;
-  text-align:center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+  font-size: 13px;
 }
 
-.work { background:#cce5ff; }
-.off { background:#eee; }
+/* 色分け */
+.work { background: #cce5ff; }
+.off { background: #eee; }
+.weekend { background: #ffecec; }
 
+.container {
+  overflow-x: auto;
+  border: 1px solid #ddd;
+}
 </style>
 </head>
 <body>
 
 <h2>派遣シフト表</h2>
 
-<input type="month" id="month" onchange="render()">
-<button onclick="addStaff()">スタッフ追加</button>
-<button onclick="downloadCSV()">CSV</button>
+<div class="controls">
+  <input type="month" id="month" onchange="render()">
+  <button onclick="addStaff()">スタッフ追加</button>
+</div>
 
-<table id="table"></table>
+<div class="container">
+  <table id="table"></table>
+</div>
 
 <script>
-let staff = JSON.parse(localStorage.getItem("staff")) || ["スタッフ1","スタッフ2"];
+let staff = JSON.parse(localStorage.getItem("staff")) || 
+["宮本","杉山","高盛","橋本","古志根"];
+
 let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
 
-function save() {
+function save(){
   localStorage.setItem("staff", JSON.stringify(staff));
   localStorage.setItem("shifts", JSON.stringify(shifts));
 }
 
-function addStaff() {
-  const name = prompt("名前入力");
-  if (!name) return;
+function addStaff(){
+  const name = prompt("スタッフ名");
+  if(!name) return;
   staff.push(name);
   save();
   render();
 }
 
-function render() {
+function render(){
   const table = document.getElementById("table");
   table.innerHTML = "";
 
   const month = document.getElementById("month").value;
-  if (!month) return;
+  if(!month) return;
 
   const [y,m] = month.split("-");
   const days = new Date(y, m, 0).getDate();
 
-  let header = "<tr><th>名前</th>";
-  for(let d=1; d<=days; d++) header += `<th>${d}</th>`;
+  const week = ["日","月","火","水","木","金","土"];
+
+  // ヘッダー
+  let header = "<tr><th class='name'>名前</th>";
+  for(let d=1; d<=days; d++){
+    const date = new Date(y, m-1, d);
+    const w = week[date.getDay()];
+    const isWeekend = (w==="土" || w==="日") ? "weekend" : "";
+
+    header += `<th class="${isWeekend}">
+      ${d}<br>${w}
+    </th>`;
+  }
   header += "</tr>";
   table.innerHTML += header;
 
+  // 本体
   staff.forEach(name=>{
-    let row = `<tr><td>${name}</td>`;
+    let row = `<tr><td class="name">${name}</td>`;
+    
     for(let d=1; d<=days; d++){
       const date = `${month}-${String(d).padStart(2,'0')}`;
       const key = name+"_"+date;
       const val = shifts[key] || "";
 
-      row += `<td>
+      row += `<td class="cell">
         <input value="${val}" 
-          onchange="update('${key}', this.value)" 
-          class="${getClass(val)}">
+          class="${getClass(val)}"
+          onchange="update('${key}', this.value)">
       </td>`;
     }
+
     row += "</tr>";
     table.innerHTML += row;
   });
@@ -93,19 +151,6 @@ function getClass(val){
   if(val.includes("休")) return "off";
   if(val) return "work";
   return "";
-}
-
-function downloadCSV(){
-  let csv="名前,日付,シフト\n";
-  for(let key in shifts){
-    const [name,date] = key.split("_");
-    csv += `${name},${date},${shifts[key]}\n`;
-  }
-  const blob = new Blob([csv], {type:"text/csv"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download="shift.csv";
-  a.click();
 }
 </script>
 
