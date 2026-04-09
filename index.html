@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シフト管理アプリ</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+h1 {
+  margin-bottom: 10px;
+}
+input, select, button {
+  margin: 5px;
+  padding: 5px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+button {
+  cursor: pointer;
+}
+.delete {
+  color: red;
+}
+</style>
+</head>
+<body>
+
+<h1>派遣シフト管理</h1>
+
+<h3>スタッフ追加</h3>
+<input type="text" id="staffName" placeholder="名前">
+<button onclick="addStaff()">追加</button>
+
+<h3>シフト登録</h3>
+<select id="staffSelect"></select>
+<input type="date" id="date">
+<input type="text" id="shift" placeholder="例：9:00-18:00">
+<button onclick="addShift()">登録</button>
+
+<h3>シフト一覧</h3>
+<table>
+  <thead>
+    <tr>
+      <th>名前</th>
+      <th>日付</th>
+      <th>シフト</th>
+      <th>削除</th>
+    </tr>
+  </thead>
+  <tbody id="shiftTable"></tbody>
+</table>
+
+<script>
+let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
+let shifts = JSON.parse(localStorage.getItem("shifts")) || [];
+
+function saveData() {
+  localStorage.setItem("staffList", JSON.stringify(staffList));
+  localStorage.setItem("shifts", JSON.stringify(shifts));
+}
+
+function addStaff() {
+  const name = document.getElementById("staffName").value;
+  if (!name) return alert("名前を入力してください");
+  staffList.push(name);
+  document.getElementById("staffName").value = "";
+  saveData();
+  renderStaff();
+}
+
+function renderStaff() {
+  const select = document.getElementById("staffSelect");
+  select.innerHTML = "";
+  staffList.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+function addShift() {
+  const name = document.getElementById("staffSelect").value;
+  const date = document.getElementById("date").value;
+  const shift = document.getElementById("shift").value;
+
+  if (!date || !shift) return alert("日付とシフトを入力してください");
+
+  shifts.push({ name, date, shift });
+  saveData();
+  renderShifts();
+}
+
+function renderShifts() {
+  const table = document.getElementById("shiftTable");
+  table.innerHTML = "";
+
+  shifts.forEach((s, index) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${s.name}</td>
+      <td>${s.date}</td>
+      <td>${s.shift}</td>
+      <td><button class="delete" onclick="deleteShift(${index})">削除</button></td>
+    `;
+
+    table.appendChild(row);
+  });
+}
+
+function deleteShift(index) {
+  shifts.splice(index, 1);
+  saveData();
+  renderShifts();
+}
+
+renderStaff();
+renderShifts();
+</script>
+
+</body>
+</html>
