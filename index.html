@@ -2,56 +2,89 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Shift Sheet</title>
+<title>Shift Board</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 16px;
-  background: #fff;
+:root {
+  --border: #e5e7eb;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #111827;
+  --sub: #6b7280;
+  --accent: #2563eb;
+  --sat: #eef6ff;
+  --sun: #fff1f2;
 }
 
-/* 上部 */
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+}
+
+/* header */
 .header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
 }
 
 input, button {
-  padding: 4px 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 6px;
   background: #fff;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-/* テーブル */
+/* card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+/* table */
 .wrapper {
-  border: 1px solid #ccc;
   overflow: auto;
-  height: 70vh;
+  max-height: 70vh;
 }
 
 table {
   border-collapse: collapse;
-  font-size: 12px;
+  min-width: 1200px;
+  width: 100%;
 }
 
 th, td {
-  border: 1px solid #e0e0e0;
-  width: 40px;
-  height: 32px;
+  border: 1px solid var(--border);
   text-align: center;
-  padding: 0;
+  font-size: 12px;
 }
 
 th {
-  background: #f5f5f5;
-  font-weight: normal;
+  background: #f9fafb;
+  color: var(--sub);
+  font-weight: 500;
+  padding: 6px;
 }
 
-/* 固定 */
+/* sticky */
 thead th {
   position: sticky;
   top: 0;
@@ -62,37 +95,56 @@ thead th {
   position: sticky;
   left: 0;
   background: #fff;
-  width: 120px;
   text-align: left;
-  padding-left: 6px;
+  padding-left: 10px;
+  width: 140px;
+  font-weight: 600;
   z-index: 2;
 }
 
-/* ホバー */
-td:hover {
-  background: #f1f3f4;
+/* hover */
+tr:hover td {
+  background: #f1f5f9;
 }
 
-/* 状態 */
+/* states */
 .present {
-  background: #e8f0fe;
-  font-weight: bold;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
 }
 
 .absent {
-  color: #aaa;
+  color: #cbd5e1;
 }
 
-/* 今日 */
+/* today */
 .today {
-  outline: 2px solid #4285f4;
+  outline: 2px solid var(--accent);
 }
 
-/* 備考表示 */
+/* 土日 */
+.sat {
+  background: var(--sat);
+}
+
+.sun {
+  background: var(--sun);
+}
+
+/* note */
+.note-mark {
+  font-size: 10px;
+  color: #666;
+}
+
+/* panel */
 .note-panel {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #444;
+  border-top: 1px solid var(--border);
+  padding: 10px;
+  font-size: 13px;
+  color: var(--sub);
+  background: #fcfcfd;
 }
 </style>
 </head>
@@ -100,17 +152,21 @@ td:hover {
 <body>
 
 <div class="header">
-  <div>
+  <div class="title">Shift Board</div>
+  <div class="controls">
     <input type="month" id="month">
     <button onclick="addStaff()">＋</button>
   </div>
 </div>
 
-<div class="wrapper">
-  <table id="table"></table>
+<div class="card">
+  <div class="wrapper">
+    <table id="table"></table>
+  </div>
+  <div class="note-panel" id="notePanel">
+    備考：セルにカーソルを合わせると表示
+  </div>
 </div>
-
-<div class="note-panel" id="notePanel">備考：</div>
 
 <script>
 const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
@@ -156,6 +212,14 @@ function editNote(key){
   }
 }
 
+function getDayClass(date){
+  const d = new Date(date);
+  const day = d.getDay();
+  if(day === 0) return "sun";
+  if(day === 6) return "sat";
+  return "";
+}
+
 function render(){
   const table = document.getElementById("table");
   table.innerHTML = "";
@@ -171,15 +235,16 @@ function render(){
   let thead = "<thead><tr><th class='name'>名前</th>";
 
   for(let d=1; d<=days; d++){
-    const dateObj = new Date(y, m-1, d);
-    const w = week[dateObj.getDay()];
+    const date = `${month}-${String(d).padStart(2,'0')}`;
+    const cls = getDayClass(date);
+
     const isToday =
       today.getFullYear()==y &&
       today.getMonth()+1==m &&
-      today.getDate()==d ? "today" : "";
+      today.getDate()==d ? "today":"";
 
-    thead += `<th class="${isToday}">
-      ${d}<br>${w}
+    thead += `<th class="${cls} ${isToday}">
+      ${d}<br>${week[new Date(date).getDay()]}
     </th>`;
   }
 
@@ -189,23 +254,26 @@ function render(){
   let tbody = "<tbody>";
 
   staff.forEach(name=>{
-    tbody += `<tr><td class="name">${name}</td>`;
+    let row = `<tr><td class="name">${name}</td>`;
 
     for(let d=1; d<=days; d++){
       const date = `${month}-${String(d).padStart(2,'0')}`;
       const key = name+"_"+date;
       const val = shifts[key] || "";
+      const note = notes[key];
 
-      tbody += `
+      row += `
       <td class="${val==='●'?'present':''}"
         onclick="toggle('${key}')"
         onmouseover="showNote('${key}')"
         ondblclick="editNote('${key}')">
         ${val}
+        ${note ? `<div class="note-mark">※</div>` : ""}
       </td>`;
     }
 
-    tbody += "</tr>";
+    row += "</tr>";
+    tbody += row;
   });
 
   tbody += "</tbody>";
