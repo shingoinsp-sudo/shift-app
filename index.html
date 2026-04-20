@@ -6,180 +6,160 @@
 
 <style>
 :root {
-  --border: #e5e7eb;
-  --bg: #f8fafc;
-  --card: #ffffff;
-  --text: #111827;
-  --sub: #6b7280;
-  --accent: #2563eb;
-  --sat: #eef6ff;
-  --sun: #fff1f2;
+  --border:#e5e7eb;
+  --bg:#f8fafc;
+  --card:#fff;
+  --text:#111827;
+  --sub:#6b7280;
+  --accent:#2563eb;
+  --sat:#eef6ff;
+  --sun:#fff1f2;
 }
 
-body {
-  margin: 0;
-  padding: 16px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg);
-  color: var(--text);
+body{
+  margin:0;
+  padding:16px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
 /* header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
+.header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
 }
+.title{font-weight:600;font-size:18px;}
+.controls{display:flex;gap:8px;}
 
-.title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-}
-
-input, button {
-  border: 1px solid var(--border);
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 13px;
+input,button{
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:6px;
+  background:#fff;
+  font-size:13px;
 }
 
 /* card */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-}
-
-/* wrapper */
-.wrapper {
-  overflow: auto;
-  max-height: 65vh;
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 2px 10px rgba(0,0,0,0.04);
 }
 
 /* table */
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 1100px;
+.wrapper{
+  overflow:auto;
+  max-height:65vh;
 }
-
-th, td {
-  border: 1px solid var(--border);
-  text-align: center;
-  font-size: 12px;
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:1100px;
 }
-
-thead th {
-  position: sticky;
-  top: 0;
-  background: #f9fafb;
-  color: var(--sub);
-  font-weight: 500;
-  padding: 6px;
+th,td{
+  border:1px solid var(--border);
+  text-align:center;
+  font-size:12px;
 }
-
-.name {
-  position: sticky;
-  left: 0;
-  background: #fff;
-  text-align: left;
-  padding-left: 10px;
-  width: 130px;
-  font-weight: 600;
-  z-index: 2;
+thead th{
+  position:sticky;
+  top:0;
+  background:#f9fafb;
+  color:var(--sub);
+  font-weight:500;
+  padding:6px;
+}
+.name{
+  position:sticky;
+  left:0;
+  background:#fff;
+  text-align:left;
+  padding-left:10px;
+  width:130px;
+  font-weight:600;
+  z-index:2;
 }
 
 /* hover */
-tr:hover td {
-  background: #f1f5f9;
-  color: var(--accent);
+tr:hover td{
+  background:#f1f5f9;
+  color:var(--accent);
 }
 
 /* cell */
-td {
-  width: 44px;
-  height: 44px;
-  cursor: pointer;
+td{
+  width:44px;
+  height:44px;
+  cursor:pointer;
 }
 
 /* status */
-.present {
-  background: var(--accent);
-  color: #fff !important;
-  font-weight: 600;
+.present{
+  background:var(--accent);
+  color:#fff!important;
+  font-weight:600;
 }
 
 /* holiday */
-.sat { background: var(--sat); }
-.sun { background: var(--sun); }
+.sat{background:var(--sat);}
+.sun{background:var(--sun);}
 
 /* today */
-.today {
-  outline: 2px solid var(--accent);
+.today{
+  outline:2px solid var(--accent);
 }
 
 /* footer */
-.footer {
-  margin-top: 10px;
-  display: grid;
-  gap: 10px;
+.footer{
+  margin-top:10px;
+  display:grid;
+  gap:10px;
+}
+.spec{
+  font-size:12px;
+  color:var(--sub);
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+}
+.note{
+  font-size:12px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
 }
 
-.spec {
-  font-size: 12px;
-  color: var(--sub);
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
+/* =========================
+   スマホ：完全週カードUI
+========================= */
+.mobile-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:10px;
+}
+.staff-name{
+  font-weight:600;
+  margin-bottom:6px;
+}
+.day-row{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px solid #f1f5f9;
+  font-size:13px;
 }
 
-.note {
-  font-size: 12px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-}
-
-/* responsive */
-@media (max-width: 768px) {
-  body {
-    padding: 10px;
-  }
-
-  table {
-    min-width: 100%;
-  }
-
-  td {
-    width: auto;
-    height: auto;
-    padding: 6px;
-    display: block;
-    text-align: left;
-  }
-
-  tr {
-    display: block;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 8px;
-  }
-
-  .name {
-    position: static;
-    width: 100%;
-    background: none;
-    padding: 6px 0;
-  }
+/* responsive切替 */
+@media(max-width:768px){
+  .wrapper{display:none;}
 }
 </style>
 </head>
@@ -195,235 +175,207 @@ td {
 </div>
 
 <div class="card">
-  <div class="wrapper">
-    <table id="table"></table>
-  </div>
+  <div id="view"></div>
 </div>
 
 <div class="footer">
   <div class="spec">
     ■ 仕様<br>
     ・PC：月表示<br>
-    ・スマホ：1週間表示（自動切替）<br>
-    ・クリック：出欠切替（● / ×）<br>
+    ・スマホ：1週間カード表示<br>
     ・土日祝は自動休み<br>
+    ・クリック：出欠<br>
+    ・ダブルクリック：備考
   </div>
 
-  <div class="note" id="notePanel">
-    備考：セルにカーソルを合わせると表示
-  </div>
+  <div class="note" id="notePanel">備考表示エリア</div>
 </div>
 
 <script>
-const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
+const defaultStaff=["宮本","杉山","高盛","橋本","古志根"];
 
-let staff = JSON.parse(localStorage.getItem("staff")) || defaultStaff;
-let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
-let notes = JSON.parse(localStorage.getItem("notes")) || {};
-let holidays = new Set();
+let staff=JSON.parse(localStorage.getItem("staff"))||defaultStaff;
+let shifts=JSON.parse(localStorage.getItem("shifts"))||{};
+let notes=JSON.parse(localStorage.getItem("notes"))||{};
+let holidays=new Set();
 
-/* 祝日取得 */
+/* 祝日 */
 async function loadHolidays(){
-  try {
-    const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
-    const data = await res.json();
-    holidays = new Set(Object.keys(data));
-  } catch(e){
-    console.log("祝日取得失敗");
-  }
+  try{
+    const res=await fetch("https://holidays-jp.github.io/api/v1/date.json");
+    const data=await res.json();
+    holidays=new Set(Object.keys(data));
+  }catch(e){}
 }
 
+/* 保存 */
 function save(){
-  localStorage.setItem("staff", JSON.stringify(staff));
-  localStorage.setItem("shifts", JSON.stringify(shifts));
-  localStorage.setItem("notes", JSON.stringify(notes));
-}
-
-function addStaff(){
-  const name = prompt("名前");
-  if(!name) return;
-  staff.push(name);
-  save();
-  render();
-}
-
-/* 判定 */
-function isHoliday(date){
-  const d = new Date(date);
-  const day = d.getDay();
-  return day === 0 || day === 6 || holidays.has(date);
+  localStorage.setItem("staff",JSON.stringify(staff));
+  localStorage.setItem("shifts",JSON.stringify(shifts));
+  localStorage.setItem("notes",JSON.stringify(notes));
 }
 
 /* スマホ判定 */
 function isMobile(){
-  return window.innerWidth <= 768;
+  return window.innerWidth<=768;
+}
+
+/* 休日 */
+function isHoliday(date){
+  const d=new Date(date);
+  const w=d.getDay();
+  return w===0||w===6||holidays.has(date);
 }
 
 /* toggle */
-function toggle(key, date){
-  if(isHoliday(date)) return;
-
-  const order = ["", "●", "×"];
-  const current = shifts[key] || "";
-  const next = order[(order.indexOf(current)+1)%order.length];
-  shifts[key] = next;
+function toggle(key,date){
+  if(isHoliday(date))return;
+  const order=["","●","×"];
+  const cur=shifts[key]||"";
+  shifts[key]=order[(order.indexOf(cur)+1)%order.length];
   save();
   render();
 }
 
-/* 週データ */
+/* 週生成 */
 function getWeek(){
-  const today = new Date();
-  const arr = [];
-
+  const today=new Date();
+  let arr=[];
   for(let i=-3;i<=3;i++){
-    const d = new Date(today);
+    const d=new Date(today);
     d.setDate(today.getDate()+i);
-
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const dd = String(d.getDate()).padStart(2,'0');
-
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,"0");
+    const dd=String(d.getDate()).padStart(2,"0");
     arr.push(`${y}-${m}-${dd}`);
   }
-
   return arr;
 }
 
 /* 備考 */
 function showNote(key){
-  document.getElementById("notePanel").innerText =
-    "備考：" + (notes[key] || "なし");
+  document.getElementById("notePanel").innerText=
+    "備考："+(notes[key]||"なし");
 }
-
 function editNote(key){
-  const val = prompt("備考", notes[key] || "");
-  if(val !== null){
-    notes[key] = val;
+  const v=prompt("備考",notes[key]||"");
+  if(v!==null){
+    notes[key]=v;
     save();
     render();
   }
 }
 
-/* PC（月） */
+/* ======================
+   PC（月表示）
+====================== */
 function renderMonth(){
-  const table = document.getElementById("table");
-  table.innerHTML = "";
+  const view=document.getElementById("view");
+  view.innerHTML=`<div class="wrapper"><table id="table"></table></div>`;
 
-  const month = document.getElementById("month").value;
-  if(!month) return;
+  const table=document.getElementById("table");
 
-  const [y,m] = month.split("-");
-  const days = new Date(y, m, 0).getDate();
-  const week = ["日","月","火","水","木","金","土"];
-  const today = new Date();
+  const month=document.getElementById("month").value;
+  if(!month)return;
 
-  let thead = "<thead><tr><th class='name'>名前</th>";
+  const [y,m]=month.split("-");
+  const days=new Date(y,m,0).getDate();
+  const week=["日","月","火","水","木","金","土"];
 
-  for(let d=1; d<=days; d++){
-    const date = `${month}-${String(d).padStart(2,'0')}`;
-    const day = new Date(date).getDay();
+  let html="<thead><tr><th class='name'>名前</th>";
 
-    const cls = isHoliday(date) ? (day===0?"sun":"sat") : "";
+  for(let i=1;i<=days;i++){
+    const date=`${month}-${String(i).padStart(2,"0")}`;
+    const d=new Date(date).getDay();
 
-    const isToday =
-      today.getFullYear()==y &&
-      today.getMonth()+1==m &&
-      today.getDate()==d ? "today":"";
-
-    thead += `<th class="${cls} ${isToday}">
-      ${d}<br>${week[day]}
-    </th>`;
+    html+=`<th>${i}<br>${week[d]}</th>`;
   }
 
-  thead += "</tr></thead>";
-  table.innerHTML += thead;
+  html+="</tr></thead><tbody>";
 
-  let tbody = "<tbody>";
+  staff.forEach(n=>{
+    html+=`<tr><td class='name'>${n}</td>`;
 
-  staff.forEach(name=>{
-    let row = `<tr><td class="name">${name}</td>`;
+    for(let i=1;i<=days;i++){
+      const date=`${month}-${String(i).padStart(2,"0")}`;
+      const key=n+"_"+date;
 
-    for(let d=1; d<=days; d++){
-      const date = `${month}-${String(d).padStart(2,'0')}`;
-      const key = name+"_"+date;
+      let v=shifts[key]||"";
+      if(isHoliday(date))v="×";
 
-      let val = shifts[key] || "";
-      if(isHoliday(date)) val = "×";
-
-      row += `
-      <td class="${val==='●'?'present':''}"
-        onclick="toggle('${key}','${date}')"
-        onmouseover="showNote('${key}')"
-        ondblclick="editNote('${key}')">
-        ${val}
-      </td>`;
+      html+=`<td onclick="toggle('${key}','${date}')"
+                 onmouseover="showNote('${key}')"
+                 ondblclick="editNote('${key}')">${v}</td>`;
     }
 
-    row += "</tr>";
-    tbody += row;
+    html+="</tr>";
   });
 
-  tbody += "</tbody>";
-  table.innerHTML += tbody;
+  html+="</tbody>";
+  table.innerHTML=html;
 }
 
-/* スマホ（週） */
+/* ======================
+   スマホ（週表示）
+====================== */
 function renderWeek(){
-  const table = document.getElementById("table");
-  table.innerHTML = "";
+  const view=document.getElementById("view");
+  view.innerHTML="";
 
-  const week = getWeek();
+  const week=getWeek();
 
-  let html = "";
-
-  staff.forEach(name=>{
-    html += `<tr><td class="name">${name}</td><td>`;
+  staff.forEach(n=>{
+    let card=`<div class="mobile-card">
+      <div class="staff-name">${n}</div>`;
 
     week.forEach(date=>{
-      const key = name+"_"+date;
+      const key=n+"_"+date;
+      let v=shifts[key]||"";
 
-      let val = shifts[key] || "";
-      if(isHoliday(date)) val = "×";
+      if(isHoliday(date))v="×";
 
-      const d = new Date(date);
-      const label = `${d.getMonth()+1}/${d.getDate()}`;
+      const d=new Date(date);
+      const label=`${d.getMonth()+1}/${d.getDate()}(${["日","月","火","水","木","金","土"][d.getDay()]})`;
 
-      html += `
-        <div onclick="toggle('${key}','${date}')"
-             onmouseover="showNote('${key}')"
-             style="padding:4px 0;">
-          ${label}：${val || "ー"}
-        </div>
-      `;
+      card+=`
+        <div class="day-row"
+          onclick="toggle('${key}','${date}')"
+          ondblclick="editNote('${key}')">
+          <span>${label}</span>
+          <span>${v||"ー"}</span>
+        </div>`;
     });
 
-    html += "</td></tr>";
+    card+="</div>";
+    view.innerHTML+=card;
   });
-
-  table.innerHTML = html;
 }
 
 /* render */
 function render(){
-  if(isMobile()){
-    renderWeek();
-  } else {
-    renderMonth();
-  }
+  if(isMobile())renderWeek();
+  else renderMonth();
 }
 
 /* init */
-window.onload = async ()=>{
-  const now = new Date().toISOString().slice(0,7);
-  document.getElementById("month").value = now;
+window.onload=async()=>{
+  const now=new Date().toISOString().slice(0,7);
+  document.getElementById("month").value=now;
 
   await loadHolidays();
   render();
 };
 
-document.getElementById("month").onchange = render;
-window.onresize = render;
+document.getElementById("month").onchange=render;
+window.onresize=render;
+
+function addStaff(){
+  const n=prompt("名前");
+  if(!n)return;
+  staff.push(n);
+  save();
+  render();
+}
 </script>
 
 </body>
