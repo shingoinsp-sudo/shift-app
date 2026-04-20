@@ -108,7 +108,7 @@ td {
   cursor: pointer;
 }
 
-/* hover */
+/* hover（追加指定） */
 tr:hover td {
   background: #f1f5f9;
   color: var(--accent);
@@ -156,27 +156,6 @@ tr:hover td {
   border-radius: 10px;
   padding: 10px;
   min-height: 40px;
-}
-
-/* responsive */
-@media (max-width: 768px) {
-  body {
-    padding: 10px;
-  }
-
-  table {
-    min-width: 900px;
-  }
-
-  td {
-    width: 36px;
-    height: 36px;
-    font-size: 11px;
-  }
-
-  .name {
-    width: 110px;
-  }
 }
 </style>
 </head>
@@ -252,6 +231,7 @@ function isHoliday(date){
   if(day === 0 || day === 6) return true;
   if(holidays.has(date)) return true;
 
+
   return false;
 }
 
@@ -302,7 +282,7 @@ function render(){
     const day = new Date(date).getDay();
 
     const cls = isHoliday(date)
-      ? (day===0 ? "sun" : day===6 ? "sat" : "sun")
+      ? (day===0 ? "sun" : "sat")
       : "";
 
     const isToday =
@@ -328,19 +308,17 @@ function render(){
       const key = name+"_"+date;
 
       let val = shifts[key] || "";
+      if(isHoliday(date)) val = "×";
 
-      if(isHoliday(date)){
-        val = "×";
-      }
-
-      const note = notes[key];
+      /* ★追加：備考マーク */
+      const noteMark = notes[key] ? "＊" : "";
 
       row += `
       <td class="${val==='●'?'present':''}"
         onclick="toggle('${key}','${date}')"
         onmouseover="showNote('${key}')"
         ondblclick="editNote('${key}')">
-        ${val}
+        ${val}${noteMark}
       </td>`;
     }
 
