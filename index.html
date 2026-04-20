@@ -18,7 +18,7 @@
 
 body {
   margin: 0;
-  padding: 24px;
+  padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
 }
@@ -28,13 +28,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text);
 }
 
 .controls {
@@ -62,12 +61,12 @@ input, button {
 /* table */
 .wrapper {
   overflow: auto;
-  max-height: 70vh;
+  max-height: 65vh;
 }
 
 table {
   border-collapse: collapse;
-  min-width: 1200px;
+  min-width: 1000px;
   width: 100%;
 }
 
@@ -97,20 +96,21 @@ thead th {
   background: #fff;
   text-align: left;
   padding-left: 10px;
-  width: 140px;
+  width: 120px;
   font-weight: 600;
   z-index: 2;
 }
 
-/* hover */
+/* hover（指定通り） */
 tr:hover td {
   background: #f1f5f9;
+  color: var(--accent);
 }
 
 /* states */
 .present {
   background: var(--accent);
-  color: #fff;
+  color: #fff !important;
   font-weight: 600;
 }
 
@@ -138,13 +138,39 @@ tr:hover td {
   color: #666;
 }
 
-/* panel */
-.note-panel {
+/* 下部 */
+.footer {
   border-top: 1px solid var(--border);
-  padding: 10px;
-  font-size: 13px;
+  padding: 12px;
+  font-size: 12px;
   color: var(--sub);
   background: #fcfcfd;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  table {
+    min-width: 800px;
+  }
+
+  th, td {
+    font-size: 10px;
+  }
+
+  .name {
+    width: 100px;
+  }
 }
 </style>
 </head>
@@ -163,8 +189,12 @@ tr:hover td {
   <div class="wrapper">
     <table id="table"></table>
   </div>
-  <div class="note-panel" id="notePanel">
-    備考：セルにカーソルを合わせると表示
+
+  <div class="footer">
+    <div id="notePanel">備考：セルにカーソルを合わせると表示</div>
+    <div>・該当日クリックで出欠切替（● / ×）</div>
+    <div>・該当日ダブルクリックで備考追加可能</div>
+    <div>・土日祝は自動で休み（×）</div>
   </div>
 </div>
 
@@ -189,7 +219,15 @@ function addStaff(){
   render();
 }
 
-function toggle(key){
+function isWeekend(date){
+  const d = new Date(date);
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
+function toggle(key, date){
+  if(isWeekend(date)) return; // 土日は固定×
+
   const order = ["", "●", "×"];
   const current = shifts[key] || "";
   const next = order[(order.indexOf(current)+1)%order.length];
@@ -212,14 +250,6 @@ function editNote(key){
   }
 }
 
-function getDayClass(date){
-  const d = new Date(date);
-  const day = d.getDay();
-  if(day === 0) return "sun";
-  if(day === 6) return "sat";
-  return "";
-}
-
 function render(){
   const table = document.getElementById("table");
   table.innerHTML = "";
@@ -236,7 +266,9 @@ function render(){
 
   for(let d=1; d<=days; d++){
     const date = `${month}-${String(d).padStart(2,'0')}`;
-    const cls = getDayClass(date);
+    const day = new Date(date).getDay();
+
+    const cls = day===0 ? "sun" : day===6 ? "sat" : "";
 
     const isToday =
       today.getFullYear()==y &&
@@ -244,7 +276,7 @@ function render(){
       today.getDate()==d ? "today":"";
 
     thead += `<th class="${cls} ${isToday}">
-      ${d}<br>${week[new Date(date).getDay()]}
+      ${d}<br>${week[day]}
     </th>`;
   }
 
@@ -259,12 +291,19 @@ function render(){
     for(let d=1; d<=days; d++){
       const date = `${month}-${String(d).padStart(2,'0')}`;
       const key = name+"_"+date;
-      const val = shifts[key] || "";
+
+      let val = shifts[key] || "";
+
+      // 土日は自動×
+      if(isWeekend(date)){
+        val = "×";
+      }
+
       const note = notes[key];
 
       row += `
       <td class="${val==='●'?'present':''}"
-        onclick="toggle('${key}')"
+        onclick="toggle('${key}','${date}')"
         onmouseover="showNote('${key}')"
         ondblclick="editNote('${key}')">
         ${val}
