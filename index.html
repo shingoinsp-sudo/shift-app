@@ -18,9 +18,10 @@
 
 body {
   margin: 0;
-  padding: 20px;
+  padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
+  color: var(--text);
 }
 
 /* header */
@@ -54,19 +55,20 @@ input, button {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
-/* table */
+/* table wrapper */
 .wrapper {
   overflow: auto;
   max-height: 65vh;
 }
 
+/* table */
 table {
   border-collapse: collapse;
-  min-width: 1000px;
+  min-width: 1100px;
   width: 100%;
 }
 
@@ -76,46 +78,47 @@ th, td {
   font-size: 12px;
 }
 
-th {
+/* header */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   background: #f9fafb;
   color: var(--sub);
   font-weight: 500;
   padding: 6px;
 }
 
-/* sticky */
-thead th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-
+/* sticky name */
 .name {
   position: sticky;
   left: 0;
   background: #fff;
   text-align: left;
   padding-left: 10px;
-  width: 120px;
+  width: 130px;
   font-weight: 600;
   z-index: 2;
 }
 
-/* hover（指定通り） */
+/* cell */
+td {
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+/* hover */
 tr:hover td {
   background: #f1f5f9;
   color: var(--accent);
 }
 
-/* states */
+/* status */
 .present {
   background: var(--accent);
   color: #fff !important;
   font-weight: 600;
-}
-
-.absent {
-  color: #cbd5e1;
 }
 
 /* today */
@@ -123,53 +126,56 @@ tr:hover td {
   outline: 2px solid var(--accent);
 }
 
-/* 土日 */
-.sat {
-  background: var(--sat);
+/* holiday */
+.sat { background: var(--sat); }
+.sun { background: var(--sun); }
+
+/* footer */
+.footer {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
 }
 
-.sun {
-  background: var(--sun);
+/* spec */
+.spec {
+  font-size: 12px;
+  color: var(--sub);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
 }
 
 /* note */
-.note-mark {
-  font-size: 10px;
-  color: #666;
-}
-
-/* 下部 */
-.footer {
-  border-top: 1px solid var(--border);
-  padding: 12px;
+.note {
   font-size: 12px;
-  color: var(--sub);
-  background: #fcfcfd;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 40px;
 }
 
-/* レスポンシブ */
+/* responsive */
 @media (max-width: 768px) {
   body {
     padding: 10px;
   }
 
-  .title {
-    font-size: 16px;
-  }
-
   table {
-    min-width: 800px;
+    min-width: 900px;
   }
 
-  th, td {
-    font-size: 10px;
+  td {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
   }
 
   .name {
-    width: 100px;
+    width: 110px;
   }
 }
 </style>
@@ -189,12 +195,19 @@ tr:hover td {
   <div class="wrapper">
     <table id="table"></table>
   </div>
+</div>
 
-  <div class="footer">
-    <div id="notePanel">備考：セルにカーソルを合わせると表示</div>
-    <div>・該当日クリックで出欠切替（● / ×）</div>
-    <div>・該当日ダブルクリックで備考追加可能</div>
-    <div>・土日祝は自動で休み（×）</div>
+<div class="footer">
+  <div class="spec">
+    ■ 仕様<br>
+    ・クリック：出欠切替（● / ×）<br>
+    ・ダブルクリック：備考追加<br>
+    ・土日祝は自動で休み扱い<br>
+    ・横スクロール対応
+  </div>
+
+  <div class="note" id="notePanel">
+    備考：セルにカーソルを合わせると表示されます
   </div>
 </div>
 
@@ -204,6 +217,18 @@ const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
 let staff = JSON.parse(localStorage.getItem("staff")) || defaultStaff;
 let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
 let notes = JSON.parse(localStorage.getItem("notes")) || {};
+let holidays = new Set();
+
+/* 祝日取得 */
+async function loadHolidays(){
+  try {
+    const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
+    const data = await res.json();
+    holidays = new Set(Object.keys(data));
+  } catch(e){
+    console.log("祝日取得失敗");
+  }
+}
 
 function save(){
   localStorage.setItem("staff", JSON.stringify(staff));
@@ -219,14 +244,20 @@ function addStaff(){
   render();
 }
 
-function isWeekend(date){
+/* 土日祝判定 */
+function isHoliday(date){
   const d = new Date(date);
   const day = d.getDay();
-  return day === 0 || day === 6;
+
+  if(day === 0 || day === 6) return true;
+  if(holidays.has(date)) return true;
+
+  return false;
 }
 
+/* toggle */
 function toggle(key, date){
-  if(isWeekend(date)) return; // 土日は固定×
+  if(isHoliday(date)) return;
 
   const order = ["", "●", "×"];
   const current = shifts[key] || "";
@@ -236,13 +267,14 @@ function toggle(key, date){
   render();
 }
 
+/* 備考 */
 function showNote(key){
   document.getElementById("notePanel").innerText =
     "備考：" + (notes[key] || "なし");
 }
 
 function editNote(key){
-  const val = prompt("備考入力", notes[key] || "");
+  const val = prompt("備考", notes[key] || "");
   if(val !== null){
     notes[key] = val;
     save();
@@ -250,6 +282,7 @@ function editNote(key){
   }
 }
 
+/* render */
 function render(){
   const table = document.getElementById("table");
   table.innerHTML = "";
@@ -268,7 +301,9 @@ function render(){
     const date = `${month}-${String(d).padStart(2,'0')}`;
     const day = new Date(date).getDay();
 
-    const cls = day===0 ? "sun" : day===6 ? "sat" : "";
+    const cls = isHoliday(date)
+      ? (day===0 ? "sun" : day===6 ? "sat" : "sun")
+      : "";
 
     const isToday =
       today.getFullYear()==y &&
@@ -294,8 +329,7 @@ function render(){
 
       let val = shifts[key] || "";
 
-      // 土日は自動×
-      if(isWeekend(date)){
+      if(isHoliday(date)){
         val = "×";
       }
 
@@ -307,7 +341,6 @@ function render(){
         onmouseover="showNote('${key}')"
         ondblclick="editNote('${key}')">
         ${val}
-        ${note ? `<div class="note-mark">※</div>` : ""}
       </td>`;
     }
 
@@ -319,9 +352,12 @@ function render(){
   table.innerHTML += tbody;
 }
 
-window.onload = ()=>{
+/* init */
+window.onload = async ()=>{
   const now = new Date().toISOString().slice(0,7);
   document.getElementById("month").value = now;
+
+  await loadHolidays();
   render();
 };
 
