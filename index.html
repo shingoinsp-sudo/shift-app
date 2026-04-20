@@ -28,8 +28,15 @@ body{
   margin-bottom:10px;
 }
 
-.title{font-weight:600;font-size:18px;}
-.controls{display:flex;gap:8px;}
+.title{
+  font-weight:600;
+  font-size:18px;
+}
+
+.controls{
+  display:flex;
+  gap:8px;
+}
 
 input,button{
   border:1px solid var(--border);
@@ -40,13 +47,13 @@ input,button{
 }
 
 .card{
-  background:var(--card);
+  background:#fff;
   border:1px solid var(--border);
   border-radius:12px;
   overflow:hidden;
 }
 
-/* ===== PC ===== */
+/* PC */
 .wrapper{
   overflow:auto;
   max-height:65vh;
@@ -92,15 +99,8 @@ thead th{
   border-radius:4px;
 }
 
-/* footer */
-.footer{
-  margin-top:10px;
-  font-size:12px;
-  color:var(--sub);
-}
-
 /* ===== スマホ ===== */
-@media (max-width:768px){
+@media(max-width:768px){
   .wrapper{display:none;}
 
   .mobile-card{
@@ -124,6 +124,22 @@ thead th{
     font-size:13px;
   }
 }
+
+/* footer */
+.footer{
+  margin-top:10px;
+  display:grid;
+  gap:10px;
+}
+
+.spec,.note{
+  font-size:12px;
+  color:var(--sub);
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+}
 </style>
 </head>
 
@@ -143,20 +159,34 @@ thead th{
 </div>
 
 <div class="footer">
-  クリック：切替（● / ×）｜土日祝：自動×
+  <div class="spec">
+    ■ 仕様<br>
+    ・PC：月表示<br>
+    ・スマホ：1週間表示<br>
+    ・クリック：●/×切替<br>
+    ・ダブルクリック：備考入力<br>
+    ・土日祝：自動×
+  </div>
+
+  <div class="note" id="notePanel">
+    備考：未選択
+  </div>
 </div>
 
 <script>
 const staff=["宮本","杉山","高盛","橋本","古志根"];
 
 let shifts={};
+let notes={};
 let holidays=new Set();
 
 /* 祝日 */
 async function loadHolidays(){
-  const res=await fetch("https://holidays-jp.github.io/api/v1/date.json");
-  const data=await res.json();
-  holidays=new Set(Object.keys(data));
+  try{
+    const res=await fetch("https://holidays-jp.github.io/api/v1/date.json");
+    const data=await res.json();
+    holidays=new Set(Object.keys(data));
+  }catch(e){}
 }
 
 /* 判定 */
@@ -165,7 +195,48 @@ function isHoliday(date){
   return d.getDay()===0 || d.getDay()===6 || holidays.has(date);
 }
 
-/* PC */
+/* toggle */
+function toggle(key,date){
+  if(isHoliday(date))return;
+
+  const order=["","●","×"];
+  const cur=shifts[key]||"";
+  shifts[key]=order[(order.indexOf(cur)+1)%order.length];
+  render();
+}
+
+/* 備考 */
+function showNote(key){
+  document.getElementById("notePanel").innerText=
+    "備考："+(notes[key]||"なし");
+}
+
+function editNote(key){
+  const v=prompt("備考",notes[key]||"");
+  if(v!==null){
+    notes[key]=v;
+    render();
+  }
+}
+
+/* 週 */
+function getWeek(){
+  const today=new Date();
+  const arr=[];
+  for(let i=-3;i<=3;i++){
+    const d=new Date(today);
+    d.setDate(today.getDate()+i);
+
+    const y=d.getFullYear();
+    const m=String(d.getMonth()+1).padStart(2,'0');
+    const dd=String(d.getDate()).padStart(2,'0');
+
+    arr.push(`${y}-${m}-${dd}`);
+  }
+  return arr;
+}
+
+/* ================= PC ================= */
 function renderPC(){
   document.getElementById("mobile").innerHTML="";
   document.querySelector(".wrapper").style.display="block";
@@ -174,6 +245,8 @@ function renderPC(){
   table.innerHTML="";
 
   const month=document.getElementById("month").value;
+  if(!month)return;
+
   const [y,m]=month.split("-");
   const days=new Date(y,m,0).getDate();
 
@@ -195,7 +268,9 @@ function renderPC(){
       let v=shifts[key]||"";
       if(isHoliday(date)) v="×";
 
-      html+=`<td onclick="toggle('${key}','${date}')">
+      html+=`<td onclick="toggle('${key}','${date}')"
+        ondblclick="editNote('${key}')"
+        onmouseover="showNote('${key}')">
         <span class="${v==='●'?'present':''}">${v}</span>
       </td>`;
     }
@@ -207,29 +282,17 @@ function renderPC(){
   table.innerHTML=html;
 }
 
-/* スマホ（完全週表示） */
+/* ================= スマホ ================= */
 function renderMobile(){
   document.querySelector(".wrapper").style.display="none";
 
   const wrap=document.getElementById("mobile");
   wrap.innerHTML="";
 
-  const today=new Date();
-
-  const week=[];
-  for(let i=-3;i<=3;i++){
-    const d=new Date(today);
-    d.setDate(today.getDate()+i);
-
-    const y=d.getFullYear();
-    const m=String(d.getMonth()+1).padStart(2,'0');
-    const dd=String(d.getDate()).padStart(2,'0');
-
-    week.push(`${y}-${m}-${dd}`);
-  }
+  const week=getWeek();
 
   staff.forEach(n=>{
-    let html=`<div class="mobile-card">
+    let card=`<div class="mobile-card">
       <div class="staff">${n}</div>`;
 
     week.forEach(date=>{
@@ -241,30 +304,21 @@ function renderMobile(){
       const d=new Date(date);
       const label=`${d.getMonth()+1}/${d.getDate()}`;
 
-      html+=`
-        <div class="row" onclick="toggle('${key}','${date}')">
+      card+=`
+        <div class="row"
+          onclick="toggle('${key}','${date}')"
+          ondblclick="editNote('${key}')">
           <div>${label}</div>
           <div class="${v==='●'?'present':''}">${v||"ー"}</div>
         </div>`;
     });
 
-    html+="</div>";
-    wrap.innerHTML+=html;
+    card+="</div>";
+    wrap.innerHTML+=card;
   });
 }
 
-/* toggle */
-function toggle(key,date){
-  if(isHoliday(date)) return;
-
-  const order=["","●","×"];
-  const cur=shifts[key]||"";
-  shifts[key]=order[(order.indexOf(cur)+1)%order.length];
-
-  render();
-}
-
-/* render切替 */
+/* render */
 function render(){
   if(window.innerWidth<=768) renderMobile();
   else renderPC();
