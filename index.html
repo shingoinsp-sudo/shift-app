@@ -24,7 +24,6 @@ body {
   color: var(--text);
 }
 
-/* header */
 .header {
   display: flex;
   justify-content: space-between;
@@ -50,7 +49,6 @@ input, button {
   font-size: 13px;
 }
 
-/* card */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -59,13 +57,11 @@ input, button {
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
-/* table wrapper */
 .wrapper {
   overflow: auto;
   max-height: 65vh;
 }
 
-/* table */
 table {
   border-collapse: collapse;
   min-width: 1100px;
@@ -78,7 +74,6 @@ th, td {
   font-size: 12px;
 }
 
-/* header */
 thead th {
   position: sticky;
   top: 0;
@@ -89,7 +84,6 @@ thead th {
   padding: 6px;
 }
 
-/* sticky name */
 .name {
   position: sticky;
   left: 0;
@@ -101,43 +95,36 @@ thead th {
   z-index: 2;
 }
 
-/* cell */
 td {
   width: 44px;
   height: 44px;
   cursor: pointer;
 }
 
-/* hover（追加指定） */
 tr:hover td {
   background: #f1f5f9;
   color: var(--accent);
 }
 
-/* status */
 .present {
   background: var(--accent);
   color: #fff !important;
   font-weight: 600;
 }
 
-/* today */
 .today {
   outline: 2px solid var(--accent);
 }
 
-/* holiday */
 .sat { background: var(--sat); }
 .sun { background: var(--sun); }
 
-/* footer */
 .footer {
   margin-top: 10px;
   display: grid;
   gap: 10px;
 }
 
-/* spec */
 .spec {
   font-size: 12px;
   color: var(--sub);
@@ -147,7 +134,6 @@ tr:hover td {
   padding: 10px;
 }
 
-/* note */
 .note {
   font-size: 12px;
   color: var(--text);
@@ -182,7 +168,6 @@ tr:hover td {
     ・クリック：出欠切替（● / ×）<br>
     ・ダブルクリック：備考追加<br>
     ・土日祝は自動で休み扱い<br>
-    ・横スクロール対応
   </div>
 
   <div class="note" id="notePanel">
@@ -191,28 +176,48 @@ tr:hover td {
 </div>
 
 <script>
-const defaultStaff = ["宮本","杉山","高盛","橋本","古志根"];
+const API_URL = "https://example.com/api/shift";
 
-let staff = JSON.parse(localStorage.getItem("staff")) || defaultStaff;
-let shifts = JSON.parse(localStorage.getItem("shifts")) || {};
-let notes = JSON.parse(localStorage.getItem("notes")) || {};
+let staff = [];
+let shifts = {};
+let notes = {};
 let holidays = new Set();
 
-/* 祝日取得 */
-async function loadHolidays(){
-  try {
-    const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
+/* ===== API ===== */
+async function loadData(){
+  try{
+    const res = await fetch(API_URL);
     const data = await res.json();
-    holidays = new Set(Object.keys(data));
-  } catch(e){
-    console.log("祝日取得失敗");
+
+    staff = data.staff || ["宮本","杉山","高盛","橋本","古志根"];
+    shifts = data.shifts || {};
+    notes = data.notes || {};
+  }catch(e){
+    staff = ["宮本","杉山","高盛","橋本","古志根"];
   }
 }
 
-function save(){
-  localStorage.setItem("staff", JSON.stringify(staff));
-  localStorage.setItem("shifts", JSON.stringify(shifts));
-  localStorage.setItem("notes", JSON.stringify(notes));
+async function save(){
+  await fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ staff, shifts, notes })
+  });
+}
+
+/* ===== 祝日 ===== */
+async function loadHolidays(){
+  try{
+    const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
+    const data = await res.json();
+    holidays = new Set(Object.keys(data));
+  }catch(e){}
+}
+
+/* ===== 共通 ===== */
+function isHoliday(date){
+  const d = new Date(date);
+  return d.getDay()===0 || d.getDay()===6 || holidays.has(date);
 }
 
 function addStaff(){
@@ -223,46 +228,32 @@ function addStaff(){
   render();
 }
 
-/* 土日祝判定 */
-function isHoliday(date){
-  const d = new Date(date);
-  const day = d.getDay();
-
-  if(day === 0 || day === 6) return true;
-  if(holidays.has(date)) return true;
-
-
-  return false;
-}
-
-/* toggle */
 function toggle(key, date){
   if(isHoliday(date)) return;
 
-  const order = ["", "●", "×"];
-  const current = shifts[key] || "";
-  const next = order[(order.indexOf(current)+1)%order.length];
-  shifts[key] = next;
+  const order = ["","●","×"];
+  const cur = shifts[key] || "";
+  shifts[key] = order[(order.indexOf(cur)+1)%order.length];
+
   save();
   render();
 }
 
-/* 備考 */
 function showNote(key){
   document.getElementById("notePanel").innerText =
     "備考：" + (notes[key] || "なし");
 }
 
 function editNote(key){
-  const val = prompt("備考", notes[key] || "");
-  if(val !== null){
-    notes[key] = val;
+  const v = prompt("備考", notes[key] || "");
+  if(v !== null){
+    notes[key] = v;
     save();
     render();
   }
 }
 
-/* render */
+/* ===== render ===== */
 function render(){
   const table = document.getElementById("table");
   table.innerHTML = "";
@@ -310,15 +301,14 @@ function render(){
       let val = shifts[key] || "";
       if(isHoliday(date)) val = "×";
 
-      /* ★追加：備考マーク */
-      const noteMark = notes[key] ? "＊" : "";
+      const mark = notes[key] ? "＊" : "";
 
       row += `
       <td class="${val==='●'?'present':''}"
         onclick="toggle('${key}','${date}')"
-        onmouseover="showNote('${key}')"
-        ondblclick="editNote('${key}')">
-        ${val}${noteMark}
+        ondblclick="editNote('${key}')"
+        onmouseover="showNote('${key}')">
+        ${val}${mark}
       </td>`;
     }
 
@@ -330,11 +320,12 @@ function render(){
   table.innerHTML += tbody;
 }
 
-/* init */
+/* ===== init ===== */
 window.onload = async ()=>{
-  const now = new Date().toISOString().slice(0,7);
-  document.getElementById("month").value = now;
+  document.getElementById("month").value =
+    new Date().toISOString().slice(0,7);
 
+  await loadData();
   await loadHolidays();
   render();
 };
