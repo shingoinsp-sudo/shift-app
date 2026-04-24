@@ -102,8 +102,8 @@ td {
 }
 
 tr:hover td {
-  background: #f1f5f9;
-  color: var(--accent);
+    background: #f1f5f9;
+    color: var(--accent) !important;
 }
 
 .present {
@@ -322,12 +322,17 @@ function render(){
 
 /* ===== init ===== */
 window.onload = async ()=>{
-  document.getElementById("month").value =
-    new Date().toISOString().slice(0,7);
+  const now = new Date().toISOString().slice(0,7);
+  document.getElementById("month").value = now;
 
   await loadData();
   await loadHolidays();
   render();
+
+  setInterval(async ()=>{
+    await loadData();
+    render();
+  }, 5000);
 };
 
 document.getElementById("month").onchange = render;
