@@ -167,7 +167,7 @@ tr:hover td {
     ■ 仕様<br>
     ・クリック：出欠切替（● / ×）<br>
     ・ダブルクリック：備考追加<br>
-    ・土日祝は自動で休み扱い<br>
+    ・土日祝は自動で休み扱い
   </div>
 
   <div class="note" id="notePanel">
@@ -176,7 +176,7 @@ tr:hover td {
 </div>
 
 <script>
-const API_URL = "https://shift-api.shingoinsp.workers.dev";
+const API_URL = "ここにWorkerのURLを入れる";
 
 let staff = [];
 let shifts = {};
@@ -193,7 +193,7 @@ async function loadData(){
     shifts = data.shifts || {};
     notes = data.notes || {};
   }catch(e){
-    staff = ["宮本","杉山","高盛","橋本","古志根"];
+    console.log("取得失敗");
   }
 }
 
@@ -228,14 +228,15 @@ function addStaff(){
   render();
 }
 
-function toggle(key, date){
+async function toggle(key, date){
   if(isHoliday(date)) return;
 
   const order = ["","●","×"];
   const cur = shifts[key] || "";
   shifts[key] = order[(order.indexOf(cur)+1)%order.length];
 
-  save();
+  await save();
+  await loadData();
   render();
 }
 
@@ -244,11 +245,12 @@ function showNote(key){
     "備考：" + (notes[key] || "なし");
 }
 
-function editNote(key){
+async function editNote(key){
   const v = prompt("備考", notes[key] || "");
   if(v !== null){
     notes[key] = v;
-    save();
+    await save();
+    await loadData();
     render();
   }
 }
@@ -322,8 +324,8 @@ function render(){
 
 /* ===== init ===== */
 window.onload = async ()=>{
-  const now = new Date().toISOString().slice(0,7);
-  document.getElementById("month").value = now;
+  document.getElementById("month").value =
+    new Date().toISOString().slice(0,7);
 
   await loadData();
   await loadHolidays();
